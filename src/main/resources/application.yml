@@ -16,3 +16,11 @@ jwt:
     key: SuperSecureSecretKey
   issuer: eCommerce
   expiryInSeconds: 604800
+
+#Email Configuration
+email:
+  from: no-reply@ecommerce.com
+
+#General Configuration
+website:
+  url: http://espra.com
