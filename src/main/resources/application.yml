@@ -1,5 +1,6 @@
 server:
   port: 8080
+#Database, Jpa & SMTP Configuration
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -10,7 +11,12 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+#SMTP Configuration
+  mail:
+    host: localhost
+    port: 25
 
+#JWT Configuration
 jwt:
   algorithm:
     key: SuperSecureSecretKey
@@ -24,3 +30,7 @@ email:
 #General Configuration
 website:
   url: http://espra.com
+
+
+
+

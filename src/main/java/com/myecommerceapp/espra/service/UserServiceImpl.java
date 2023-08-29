@@ -4,6 +4,7 @@ import com.myecommerceapp.espra.api.model.LoginBody;
 import com.myecommerceapp.espra.api.model.RegistrationBody;
 import com.myecommerceapp.espra.exception.EmailFailureException;
 import com.myecommerceapp.espra.exception.UserAlreadyExistsException;
+import com.myecommerceapp.espra.exception.UserNotVerifiedException;
 import com.myecommerceapp.espra.model.LocalUser;
 import com.myecommerceapp.espra.model.VerificationToken;
 import com.myecommerceapp.espra.model.dao.LocalUserDAO;
@@ -12,8 +13,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -55,13 +58,25 @@ public class UserServiceImpl {
         return verificationToken;
     }
 
-    public String loginUser(LoginBody loginBody){
+    public String loginUser(LoginBody loginBody) throws UserNotVerifiedException, EmailFailureException {
         Optional<LocalUser> optUser = dao.findByUsernameIgnoreCase(loginBody.getUsername());
 
         if (optUser.isPresent()){
             LocalUser user = optUser.get();
             if (passwordEncoder.matches(loginBody.getPassword(), user.getPassword())){
-                return jwtService.generateJWT(user);
+                if (user.getEmailVerified()) {
+                    return jwtService.generateJWT(user);
+                } else {
+                    List<VerificationToken> tokenList = user.getVerificationTokens();
+                    boolean resend =  tokenList.size() == 0 ||
+                            tokenList.get(0).getCreatedTimeStamp().before(new Timestamp(System.currentTimeMillis() - (60 * 60 * 1000)));
+                    if (resend){
+                        VerificationToken token = createVerificationToken(user);
+                        verificationTokenDAO.save(token);
+                        service.sendVerificationEmail(token);
+                    }
+                    throw new UserNotVerifiedException(resend);
+                }
             }
         }
         return null;
@@ -77,5 +92,21 @@ public class UserServiceImpl {
     }
     private RegistrationBody registrationBody(LocalUser user){
         return mapper.map(user, RegistrationBody.class);
+    }
+
+    @Transactional
+    public boolean verifyUser(String token){
+        Optional<VerificationToken> optToken = verificationTokenDAO.findByToken(token);
+        if (optToken.isPresent()){
+            VerificationToken verificationToken = optToken.get();
+            LocalUser user = verificationToken.getLocalUser();
+            if (!user.getEmailVerified()) {
+                user.setEmailVerified(true);
+                dao.save(user);
+                verificationTokenDAO.deleteByLocalUser(user);
+                return true;
+            }
+        }
+        return false;
     }
 }

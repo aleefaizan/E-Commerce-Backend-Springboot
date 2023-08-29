@@ -21,7 +21,7 @@ public class WebSecurityConfig {
                 .addFilterBefore(requestFilter, AuthorizationFilter.class)
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/product").permitAll()
                         .requestMatchers("/auth/register").permitAll()
-                        .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated());
         return security.build();
     }
