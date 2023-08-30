@@ -20,7 +20,7 @@ public class WebSecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .addFilterBefore(requestFilter, AuthorizationFilter.class)
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/product").permitAll()
-                        .requestMatchers("/auth/register").permitAll()
+                        .requestMatchers("/auth/register", "/error").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated());
         return security.build();
