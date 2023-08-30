@@ -41,10 +41,12 @@ public class JWTRequestFilter extends OncePerRequestFilter {
               Optional<LocalUser> optUser = dao.findByUsernameIgnoreCase(username);
               if (optUser.isPresent()){
                   LocalUser user = optUser.get();
-                  UsernamePasswordAuthenticationToken authenticationToken =
-                          new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
-                  authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                  SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                  if (user.getEmailVerified()) {
+                      UsernamePasswordAuthenticationToken authenticationToken =
+                              new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
+                      authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                      SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                  }
               }
           } catch (JWTDecodeException ignored) {
           }

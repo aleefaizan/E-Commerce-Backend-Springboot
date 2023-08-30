@@ -31,7 +31,7 @@ public class AuthenticationControllerTest {
 
     @Test
     public void testRegister() throws Exception {
-        ObjectMapper mapper = new ObjectMapper()
+        ObjectMapper mapper = new ObjectMapper();
         RegistrationBody body = new RegistrationBody();
         body.setFirstName("FirstName");
         body.setLastName("LastName");
@@ -79,7 +79,8 @@ public class AuthenticationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
                 .andExpect(status().is(HttpStatus.OK.value()));
-
     }
+
+
 
 }
