@@ -1,6 +1,7 @@
 package com.myecommerceapp.espra.service;
 
 import com.myecommerceapp.espra.exception.EmailFailureException;
+import com.myecommerceapp.espra.model.LocalUser;
 import com.myecommerceapp.espra.model.VerificationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,27 @@ public class EmailService {
                 "Best regards,\n" +
                 "The ESPRA Team\n"
         );
+        try {
+            javaMailSender.send(message);
+        } catch (MailException ex) {
+            throw new EmailFailureException();
+        }
+    }
+
+    public void sendPasswordEmail(LocalUser user, String token) throws EmailFailureException{
+        SimpleMailMessage message = simpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject("Password Reset Link");
+        message.setText("Hello " + user.getFirstName() +
+                "\n" +
+                "You have requested to reset your password, please click the link below to reset your password:\n" +
+                "\n" +
+                url + "/auth/reset?token=" + token +
+                "\n" +
+                "This link will be expired in 30 minutes from now.\n" +
+                "\n" +
+                "Best regards,\n" +
+                "The ESPRA Team\n");
         try {
             javaMailSender.send(message);
         } catch (MailException ex) {

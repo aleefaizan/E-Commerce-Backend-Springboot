@@ -13,15 +13,15 @@ public class WebSecurityConfig {
 
     @Autowired
     private JWTRequestFilter requestFilter;
+
+    private final String[] WHITE_LIST_URLS = {"/auth/register", "/product", "/error", "/auth/**", "/auth/reset", "/auth/forgot"};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity security) throws Exception {
         security
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 .addFilterBefore(requestFilter, AuthorizationFilter.class)
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/product").permitAll()
-                        .requestMatchers("/auth/register", "/error").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
+                .authorizeHttpRequests(auth -> auth.requestMatchers(WHITE_LIST_URLS).permitAll()
                         .anyRequest().authenticated());
         return security.build();
     }

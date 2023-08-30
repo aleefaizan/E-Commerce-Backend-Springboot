@@ -1,8 +1,10 @@
 package com.myecommerceapp.espra.service;
 
 import com.myecommerceapp.espra.api.model.LoginBody;
+import com.myecommerceapp.espra.api.model.PasswordResetBody;
 import com.myecommerceapp.espra.api.model.RegistrationBody;
 import com.myecommerceapp.espra.exception.EmailFailureException;
+import com.myecommerceapp.espra.exception.EmailNotFoundException;
 import com.myecommerceapp.espra.exception.UserAlreadyExistsException;
 import com.myecommerceapp.espra.exception.UserNotVerifiedException;
 import com.myecommerceapp.espra.model.LocalUser;
@@ -108,5 +110,26 @@ public class UserServiceImpl {
             }
         }
         return false;
+    }
+
+    public void forgotPassword(String email) throws EmailNotFoundException, EmailFailureException {
+        Optional<LocalUser> optUser = dao.findByEmailIgnoreCase(email);
+        if (optUser.isPresent()){
+            LocalUser user = optUser.get();
+            String token = jwtService.generatePasswordResetJWT(user);
+            service.sendPasswordEmail(user, token);
+        } else {
+            throw new EmailNotFoundException();
+        }
+    }
+
+    public void resetPassword(PasswordResetBody body){
+        String email = jwtService.getResetPasswordEmail(body.getToken());
+        Optional<LocalUser> optUser = dao.findByEmailIgnoreCase(email);
+        if (optUser.isPresent()){
+            LocalUser user = optUser.get();
+            user.setPassword(passwordEncoder.encode(body.getPassword()));
+            dao.save(user);
+        }
     }
 }

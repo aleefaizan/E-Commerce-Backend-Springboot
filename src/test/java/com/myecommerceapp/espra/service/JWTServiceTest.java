@@ -41,15 +41,53 @@ public class JWTServiceTest {
     }
 
     @Test
-    public void testJWTNotGeneratedByUs(){
+    public void testLoginJWTNotGeneratedByUs(){
         String token = JWT.create().withClaim("USERNAME", "UserA").sign(Algorithm.HMAC256("Not the real secret"));
         Assertions.assertThrows(SignatureVerificationException.class, () -> service.getUsername(token));
     }
 
     @Test
-    public void testJWTCorrectlySignedNoIssue(){
+    public void testLoginJWTCorrectlySignedNoIssue(){
         String token = JWT.create().withClaim("USERNAME", "UserA").sign(Algorithm.HMAC256(algorithmKey));
         Assertions.assertThrows(MissingClaimException.class,
                 () -> service.getUsername(token));
+    }
+
+    /**
+     * Tests that when someone generates a JWT with an algorithm different to
+     * ours the verification rejects the token as the signature is not verified.
+     */
+    @Test
+    public void testResetPasswordJWTNotGeneratedByUs() {
+        String token =
+                JWT.create().withClaim("RESET_PASSWORD_EMAIL", "UserA@junit.com").sign(Algorithm.HMAC256(
+                        "NotTheRealSecret"));
+        Assertions.assertThrows(SignatureVerificationException.class,
+                () -> service.getResetPasswordEmail(token));
+    }
+
+    /**
+     * Tests that when a JWT token is generated if it does not contain us as
+     * the issuer we reject it.
+     */
+    @Test
+    public void testResetPasswordJWTCorrectlySignedNoIssuer() {
+        String token =
+                JWT.create().withClaim("RESET_PASSWORD_EMAIL", "UserA@junit.com")
+                        .sign(Algorithm.HMAC256(algorithmKey));
+        Assertions.assertThrows(MissingClaimException.class,
+                () -> service.getResetPasswordEmail(token));
+    }
+
+    /**
+     * Tests the password reset generation and verification.
+     */
+    @Test
+    public void testPasswordResetToken() {
+        LocalUser user = dao.findByUsernameIgnoreCase("UserA").get();
+        String token = service.generatePasswordResetJWT(user);
+        Assertions.assertEquals(user.getEmail(),
+                service.getResetPasswordEmail(token), "Email should match inside " +
+                        "JWT.");
     }
 }

@@ -4,11 +4,15 @@ import com.icegreen.greenmail.configuration.GreenMailConfiguration;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
 import com.icegreen.greenmail.util.ServerSetupTest;
 import com.myecommerceapp.espra.api.model.LoginBody;
+import com.myecommerceapp.espra.api.model.PasswordResetBody;
 import com.myecommerceapp.espra.api.model.RegistrationBody;
 import com.myecommerceapp.espra.exception.EmailFailureException;
+import com.myecommerceapp.espra.exception.EmailNotFoundException;
 import com.myecommerceapp.espra.exception.UserAlreadyExistsException;
 import com.myecommerceapp.espra.exception.UserNotVerifiedException;
+import com.myecommerceapp.espra.model.LocalUser;
 import com.myecommerceapp.espra.model.VerificationToken;
+import com.myecommerceapp.espra.model.dao.LocalUserDAO;
 import com.myecommerceapp.espra.model.dao.VerificationTokenDAO;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
@@ -34,6 +39,12 @@ public class UserServiceTest {
     private UserServiceImpl userService;
     @Autowired
     private VerificationTokenDAO dao;
+    @Autowired
+    private LocalUserDAO localUserDAO;
+    @Autowired
+    private JWTService jwtService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
 
     @Test
@@ -108,5 +119,36 @@ public class UserServiceTest {
             Assertions.assertNotNull(body, "User should now be verified");
 
         }
+    }
+    /**
+     * Tests the forgotPassword method in the User Service.
+     */
+    @Test
+    @Transactional
+    public void testForgotPassword() throws MessagingException {
+        Assertions.assertThrows(EmailNotFoundException.class,
+                () -> userService.forgotPassword("UserNotExist@junit.com"));
+        Assertions.assertDoesNotThrow(() -> userService.forgotPassword(
+                "UserA@junit.com"), "Non existing email should be rejected.");
+        Assertions.assertEquals("UserA@junit.com",
+                greenMailExtension.getReceivedMessages()[0]
+                        .getRecipients(Message.RecipientType.TO)[0].toString(), "Password " +
+                        "reset email should be sent.");
+    }
+
+    /**
+     * Tests the resetPassword method in the User Service.
+     */
+    @Test
+    public void testResetPassword() {
+        LocalUser user = localUserDAO.findByUsernameIgnoreCase("UserA").get();
+        String token = jwtService.generatePasswordResetJWT(user);
+        PasswordResetBody body = new PasswordResetBody();
+        body.setToken(token);
+        body.setPassword("Password123456");
+        userService.resetPassword(body);
+        user = localUserDAO.findByUsernameIgnoreCase("UserA").get();
+        Assertions.assertTrue(passwordEncoder.matches("Password123456",
+                user.getPassword()), "Password change should be written to DB.");
     }
 }

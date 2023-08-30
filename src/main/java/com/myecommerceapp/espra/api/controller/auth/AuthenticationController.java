@@ -2,8 +2,10 @@ package com.myecommerceapp.espra.api.controller.auth;
 
 import com.myecommerceapp.espra.api.model.LoginBody;
 import com.myecommerceapp.espra.api.model.LoginResponse;
+import com.myecommerceapp.espra.api.model.PasswordResetBody;
 import com.myecommerceapp.espra.api.model.RegistrationBody;
 import com.myecommerceapp.espra.exception.EmailFailureException;
+import com.myecommerceapp.espra.exception.EmailNotFoundException;
 import com.myecommerceapp.espra.exception.UserAlreadyExistsException;
 import com.myecommerceapp.espra.exception.UserNotVerifiedException;
 import com.myecommerceapp.espra.model.LocalUser;
@@ -69,6 +71,24 @@ public class AuthenticationController {
         } else {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
+    }
+
+    @PostMapping("/forgot")
+    public ResponseEntity forgotPassword(@RequestParam String email){
+        try {
+            userService.forgotPassword(email);
+            return ResponseEntity.ok().build();
+        } catch (EmailNotFoundException ex ){
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (EmailFailureException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/reset")
+    public ResponseEntity resetPassword(@Valid @RequestBody PasswordResetBody body){
+        userService.resetPassword(body);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
