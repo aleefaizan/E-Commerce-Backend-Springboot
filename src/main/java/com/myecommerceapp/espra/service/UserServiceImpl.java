@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -131,5 +132,9 @@ public class UserServiceImpl {
             user.setPassword(passwordEncoder.encode(body.getPassword()));
             dao.save(user);
         }
+    }
+
+    public boolean userHasPermissionToUser(LocalUser user, Long id) {
+        return Objects.equals(user.getId(), id);
     }
 }
