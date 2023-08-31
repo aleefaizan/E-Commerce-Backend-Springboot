@@ -14,7 +14,7 @@ public class WebSecurityConfig {
     @Autowired
     private JWTRequestFilter requestFilter;
 
-    private final String[] WHITE_LIST_URLS = {"/auth/register", "/product", "/error", "/auth/**", "/auth/reset", "/auth/forgot"};
+    private final String[] WHITE_LIST_URLS = {"/auth/register", "/product/", "/error", "/auth/**", "/auth/reset", "/auth/forgot"};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity security) throws Exception {
         security
